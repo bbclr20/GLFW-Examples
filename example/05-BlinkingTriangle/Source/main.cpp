@@ -16,24 +16,35 @@ const GLchar* vertexShaderSource = R"glsl(
 	#version 330 core
 
 	layout (location = 0) in vec3 position;
-
-	void main()
+    layout (location = 1) in vec3 color;
+	
+    out vec3 ourColor;
+    
+    void main()
 	{
 		gl_Position = vec4(position.x, position.y, position.z, 1.0);
-	}
+	    ourColor = color; 
+    }
 )glsl";
 
 
 // fs
 const GLchar* fragmentShaderSource = R"glsl(
     #version 330 core
-    
+
+    in vec3 ourColor;
+    uniform float timeVariance;
     out vec4 color;
-    uniform vec4 ourColor;    
     
     void main()
     {
-        color = ourColor;
+        // color = vec4(ourColor, 1.0f);
+        color = vec4(
+            ourColor.x+timeVariance, 
+            ourColor.y-timeVariance, 
+            ourColor.z-timeVariance, 
+            1.0f
+        );
     }
 )glsl";
 
@@ -49,7 +60,7 @@ int main() {
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Uniform variable", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Vertex data", nullptr, nullptr);
     glfwMakeContextCurrent(window);
 
     // Set the required callback functions
@@ -107,16 +118,17 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
+    // vertex withc color
     GLfloat vertices[] = {
-         0.0f,  0.5f, 0.0f,  
-         0.5f, -0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
+     // position 3f      // color 3f
+     0.5f, -0.5f, 0.0f,  0.3f, 0.5f, 0.7f,   // 右下
+    -0.5f, -0.5f, 0.0f,  0.7f, 0.3f, 0.5f,   // 左下
+     0.0f,  0.5f, 0.0f,  0.5f, 0.7f, 0.3f    // 顶部
     };
 
     GLuint indices[] = {
         0, 1, 2,
     };
-    
  
     // create VBO VAO EBO
     GLuint VBO, VAO, EBO;
@@ -133,8 +145,11 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3* sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
 
     // Uncommenting this call will result in wireframe polygons.
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -150,11 +165,12 @@ int main() {
 
         // Draw our first triangle
         GLfloat timeValue = glfwGetTime();
-        GLfloat greenValue = (sin(timeValue) / 2) + 0.5;
-        GLint vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        GLfloat timeVarianceValue = (sin(timeValue) / 4);
+        GLint timeVarianceLocation = glGetUniformLocation(shaderProgram, "timeVariance");
+        
         glUseProgram(shaderProgram);
-        glUniform4f(vertexColorLocation, 1.0f, greenValue, 0.2f, 1.0f);
-
+        glUniform1f(timeVarianceLocation, timeVarianceValue);
+        
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);

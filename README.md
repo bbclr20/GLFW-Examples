@@ -17,3 +17,7 @@ Draw a triangle with VAO, VBO and EBO.
 ### 04 Uniform
 
 Use uniform variable in fragment shader.
+
+### 05 BlinkingTriangle
+
+Use uniform variable and add base colors to the vertex data.
